@@ -12,6 +12,8 @@ interface Message {
   decisionOptions?: string[];
   isQuestion?: boolean;
   optionsCount?: number;
+  userOptions?: string[];
+  userspros?: string[];
   showOptions?: boolean;
   showDecisionGraph?: boolean;
 }
@@ -31,12 +33,18 @@ function App() {
   const [isOptionsPending, setIsOptionsPending] = useState(false);
   const containsDecisionKeywordRef = useRef(false);
   const qlist = useRef<string[]>([]);
-  // const olist = useRef<string[]>([]);
+  const olist = useRef<string[][]>([]);
 
-  const updateLists = (result: string[]) => {
+  const updateqLists = (result: string[]) => {
     console.log("Update lists called with result:", result);
     qlist.current = result
     console.log("Updated qlist:", qlist.current);
+  };
+
+  const updateopLists = (result: string[][]) => {
+    console.log("Update lists called with result:", result);
+    olist.current = result
+    console.log("Updated olist:", olist.current);
   };
 
   useEffect(() => {
@@ -92,34 +100,54 @@ function App() {
     let decision = '';
     let decisionList: string[] = [];
 
-    try {
-      decision = await isDecision(input);
-      console.log("Input:", input);
-      console.log("Decision result:", decision);
-
-      if (decision === "Only help with decisions") {
+    if (!containsDecisionKeywordRef.current) {
+      try {
+        decision = await isDecision(input);
+        console.log("Input:", input);
+        console.log("Decision result:", decision);
+  
+        if (decision === "Only help with decisions") {
+          containsDecisionKeywordRef.current = false;
+        } else {
+          containsDecisionKeywordRef.current = true;
+          decisionList = decision.split(',').map(item => item.trim());
+          console.log("Decision result as list:", decisionList);
+          console.log("Contains decision keyword:", containsDecisionKeywordRef.current);
+        }
+      } catch (error) {
+        console.error("Error determining if input is a decision:", error);
         containsDecisionKeywordRef.current = false;
-      } else {
-        containsDecisionKeywordRef.current = true;
-        decisionList = decision.split(',').map(item => item.trim());
-        console.log("Decision result as list:", decisionList);
-        console.log("Contains decision keyword:", containsDecisionKeywordRef.current);
       }
-    } catch (error) {
-      console.error("Error determining if input is a decision:", error);
-      containsDecisionKeywordRef.current = false;
     }
 
     const containsFinalKeyword = input.toLowerCase().includes('final');
     const containsQuestionKeyword = input.toLowerCase().includes('question');
 
-    const optionsMatch = input.toLowerCase().match(/option\s+(\d+)/);
-    const optionsCount = optionsMatch ? parseInt(optionsMatch[1], 10) : null;
+    //const optionsMatch = input.toLowerCase().match(/option\s+(\d+)/);
+    //const optionsCount = optionsMatch ? parseInt(optionsMatch[1], 10) : null;
+    let item: string[] = [];
+    let optionsCount = 0;
+    if (olist.current.length > 0) {
+      // Get the first item from the list
+      item = olist.current[0];
+      optionsCount = item.length;
+    
+      // Remove the item from the list
+      olist.current = olist.current.slice(1);
+    
+      console.log('Retrieved item:', item);
+      console.log('Updated olist:', olist.current);
+    }
+    
 
     const newMessage: Message = { role: 'user', content: input };
     const messages = [newMessage];
 
-    if (containsDecisionKeywordRef.current) {
+    console.log('containsDecisionKeywordRef', containsDecisionKeywordRef.current);
+    console.log('olist', olist.current);
+    console.log('qlist', qlist.current);
+
+    if (containsDecisionKeywordRef.current && qlist.current.length == 0 && olist.current.length == 0) {
       messages.push({
         role: 'assistant',
         content: decision,
@@ -128,10 +156,11 @@ function App() {
         isQuestion: false,
       });
       setIsDecisionPending(true);
-    } else if (optionsCount !== null) {
+    } else if (containsDecisionKeywordRef.current && olist.current.length > 0) {
       messages.push({
         role: 'assistant',
         content: '',
+        userOptions:item,
         showOptions: true,
         optionsCount,
       });
@@ -200,8 +229,8 @@ function App() {
     });
     setChats(updatedChats);
   };
-
-  const handleOptionSelect = (optionNumber: number) => {
+  // where I can store the user results from
+  const handleOptionSelect = (userChoice: string) => {
     setIsOptionsPending(false);
     const updatedChats = chats.map(chat => {
       if (chat.id === currentChatId) {
@@ -210,7 +239,7 @@ function App() {
             return {
               ...msg,
               showOptions: false,
-              content: `Selected Option ${optionNumber}`
+              content: `Selected Option: ${userChoice}`
             };
           }
           return msg;
@@ -297,6 +326,7 @@ function App() {
               message.showOptions ? (
                 <Options
                   key={index}
+                  userOptions={message.userOptions}
                   optionsCount={message.optionsCount || 2}
                   onSelectOption={handleOptionSelect}
                 />
@@ -312,7 +342,8 @@ function App() {
                   onContinue={message.showDecisionOptions ? handleDecisionContinue : undefined}
                   onCancel={message.showDecisionOptions ? handleDecisionCancel : undefined}
                   onShowDecision={message.showDecisionGraph ? () => setShowDecisionGraph(true) : undefined}
-                  updateLists={updateLists}
+                  updateqLists={updateqLists}
+                  updateopLists={updateopLists}
                 />
               )
             )

@@ -3,10 +3,11 @@ import { Bot } from 'lucide-react';
 
 interface OptionsProps {
   optionsCount: number;
-  onSelectOption: (option: number) => void;
+  userOptions?: string[];
+  onSelectOption: (userChoice: string) => void;
 }
 
-const Options: React.FC<OptionsProps> = ({ optionsCount, onSelectOption }) => {
+const Options: React.FC<OptionsProps> = ({ optionsCount, onSelectOption,userOptions}) => {
   return (
     <div className="flex gap-4 bg-white p-4 rounded-lg">
       <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#e3a66a] text-white">
@@ -18,10 +19,10 @@ const Options: React.FC<OptionsProps> = ({ optionsCount, onSelectOption }) => {
             {Array.from({ length: optionsCount }).map((_, index) => (
               <button
                 key={index}
-                onClick={() => onSelectOption(index + 1)}
+                onClick={() => onSelectOption(userOptions && userOptions[index] ? userOptions[index] : `Option ${index + 1}`)}
                 className="p-4 border-2 border-[#e3a66a] rounded-lg hover:bg-[#e3a66a] hover:text-white transition-colors duration-200 text-[#a48363] font-semibold"
               >
-                Option {index + 1}
+                {userOptions && userOptions[index] ? userOptions[index] : `Option ${index + 1}`}
               </button>
             ))}
           </div>
