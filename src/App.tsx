@@ -30,10 +30,14 @@ function App() {
   const [isDecisionPending, setIsDecisionPending] = useState(false);
   const [isOptionsPending, setIsOptionsPending] = useState(false);
   const containsDecisionKeywordRef = useRef(false);
-  const [questionList, setquestionList] = useState<string[]>([]);
+  const qlist = useRef<string[]>([]);
+  // const olist = useRef<string[]>([]);
 
-  
-
+  const updateLists = (result: string[]) => {
+    console.log("Update lists called with result:", result);
+    qlist.current = result
+    console.log("Updated qlist:", qlist.current);
+  };
 
   useEffect(() => {
     if (chats.length === 0) {
@@ -51,7 +55,6 @@ function App() {
   const messages = currentChat?.messages || [];
 
   const createNewChat = () => {
-    
     const newChat: Chat = {
       id: Date.now().toString(),
       title: 'New Chat',
@@ -66,7 +69,7 @@ function App() {
     e.stopPropagation();
     const updatedChats = chats.filter(chat => chat.id !== chatId);
     setChats(updatedChats);
-    
+
     if (chatId === currentChatId) {
       setCurrentChatId(updatedChats[0]?.id || null);
     }
@@ -93,13 +96,11 @@ function App() {
       decision = await isDecision(input);
       console.log("Input:", input);
       console.log("Decision result:", decision);
-      
 
-      if (decision === "Only help with decisions"){
+      if (decision === "Only help with decisions") {
         containsDecisionKeywordRef.current = false;
-      }
-      else {
-        containsDecisionKeywordRef.current = true; 
+      } else {
+        containsDecisionKeywordRef.current = true;
         decisionList = decision.split(',').map(item => item.trim());
         console.log("Decision result as list:", decisionList);
         console.log("Contains decision keyword:", containsDecisionKeywordRef.current);
@@ -147,8 +148,7 @@ function App() {
         content: decision,
         showDecisionOptions: false,
         isQuestion: containsQuestionKeyword,
-      }
-    );
+      });
     }
 
     const updatedChats = chats.map((chat) => {
@@ -247,7 +247,7 @@ function App() {
             <p className="text-sm text-[#eed8a4] italic">Teaching AI to ask the right questions</p>
           </div>
         </div>
-        
+
         <div className="group relative w-10 mt-1 mb-2">
           <button
             onClick={createNewChat}
@@ -273,7 +273,7 @@ function App() {
             >
               <MessageSquare className="w-4 h-4 flex-shrink-0" />
               <span className="truncate flex-1">{chat.title}</span>
-              <Trash2 
+              <Trash2
                 className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:text-red-500 ${
                   currentChatId === chat.id ? 'text-[#a48363]' : 'text-[#eed8a4]'
                 }`}
@@ -293,7 +293,7 @@ function App() {
               <p>Ask your first question below</p>
             </div>
           ) : (
-            messages.map((message, index) => (
+            messages.map((message, index) =>
               message.showOptions ? (
                 <Options
                   key={index}
@@ -312,9 +312,10 @@ function App() {
                   onContinue={message.showDecisionOptions ? handleDecisionContinue : undefined}
                   onCancel={message.showDecisionOptions ? handleDecisionCancel : undefined}
                   onShowDecision={message.showDecisionGraph ? () => setShowDecisionGraph(true) : undefined}
+                  updateLists={updateLists}
                 />
               )
-            ))
+            )
           )}
         </div>
 
@@ -333,7 +334,7 @@ function App() {
               disabled={isDecisionPending || isOptionsPending}
               className={`text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2 ${
                 isDecisionPending || isOptionsPending
-                  ? 'bg-gray-400 cursor-not-allowed' 
+                  ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-[#e3a66a] hover:bg-[#a48363]'
               }`}
             >
@@ -344,9 +345,7 @@ function App() {
         </div>
       </div>
 
-      {showDecisionGraph && (
-        <DecisionGraph onClose={() => setShowDecisionGraph(false)} />
-      )}
+      {showDecisionGraph && <DecisionGraph onClose={() => setShowDecisionGraph(false)} />}
     </div>
   );
 }
