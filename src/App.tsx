@@ -32,8 +32,10 @@ function App() {
   const [isDecisionPending, setIsDecisionPending] = useState(false);
   const [isOptionsPending, setIsOptionsPending] = useState(false);
   const containsDecisionKeywordRef = useRef(false);
+  const containsFinalKeywordRef = useRef(false);
   const qlist = useRef<string[]>([]);
   const olist = useRef<string[][]>([]);
+  let usersanswers = useRef<string[]>([]);
 
   const updateqLists = (result: string[]) => {
     console.log("Update lists called with result:", result);
@@ -120,12 +122,8 @@ function App() {
       }
     }
 
-    const containsFinalKeyword = input.toLowerCase().includes('final');
-    const containsQuestionKeyword = input.toLowerCase().includes('question');
-
-    let item: string[] = [];
-    let optionsCount = 0;
     
+    const containsQuestionKeyword = input.toLowerCase().includes('question');
 
     const newMessage: Message = { role: 'user', content: input };
     const messages = [newMessage];
@@ -134,7 +132,7 @@ function App() {
     console.log('olist', olist.current);
     console.log('qlist', qlist.current);
 
-    if (containsDecisionKeywordRef.current && qlist.current.length == 0 && olist.current.length == 0) {
+    if (containsDecisionKeywordRef.current && qlist.current.length == 0 && olist.current.length == 0 && !containsFinalKeywordRef.current) {
       messages.push({
         role: 'assistant',
         content: decision,
@@ -143,16 +141,24 @@ function App() {
         isQuestion: false,
       });
       setIsDecisionPending(true);
-    } else if (containsDecisionKeywordRef.current && olist.current.length > 0) {
+    } else if (containsDecisionKeywordRef.current && qlist.current.length > 0) {
+      usersanswers.current.push(input);
+      console.log("User's answers:", usersanswers.current);
+      let nextQuestion = qlist.current.length > 0 ? qlist.current.shift()! : 'All options have been processed.';// Fallback value if qlist is empty
+      if (qlist.current.length == 0) {
+        containsFinalKeywordRef.current = true;
+      }
+      usersanswers.current.push(nextQuestion);
       messages.push({
         role: 'assistant',
-        content: '',
-        userOptions:item,
-        showOptions: true,
-        optionsCount,
+        content: nextQuestion,
+        showOptions: false,
+        isQuestion: true,
       });
-      setIsOptionsPending(true);
-    } else if (containsFinalKeyword) {
+      setIsOptionsPending(false);
+    } else if (containsFinalKeywordRef.current) {
+      usersanswers.current.push(input);
+      console.log("User's answers:", usersanswers.current);
       messages.push({
         role: 'assistant',
         content: 'Best choice is...',
@@ -220,6 +226,9 @@ function App() {
   const handleOptionSelect = (userChoice: string) => {
     if (!currentChatId) return;
 
+    usersanswers.current.push(userChoice);
+    console.log("User's answers:", usersanswers.current);
+
     // Step 1: Update the last message to show the selected option
     const updatedChats = chats.map(chat => {
       if (chat.id === currentChatId) {
@@ -273,6 +282,9 @@ function App() {
       } else {
         let nextQuestion = qlist.current.length > 0 ? qlist.current.shift()!
         : 'All options have been processed.';
+
+        usersanswers.current.push("these are question the users answered");
+        usersanswers.current.push(nextQuestion);
         const startQuestions: Message = {
           role: 'assistant',
           content: nextQuestion,
