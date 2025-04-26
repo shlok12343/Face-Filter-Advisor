@@ -191,7 +191,7 @@ function App() {
             return {
               ...msg,
               showDecisionOptions: false,
-              content: "Let's help you make a decision."
+              content: "Let's help you make a decision .... loading ....",
             };
           }
           return msg;
@@ -271,24 +271,26 @@ function App() {
         setChats(updatedChatsWithNextOptions);
         setIsOptionsPending(true);
       } else {
-        // Step 4: If no more options, push a final message
-        const finalMessage: Message = {
+        let nextQuestion = qlist.current.length > 0 ? qlist.current.shift()!
+        : 'All options have been processed.';
+        const startQuestions: Message = {
           role: 'assistant',
-          content: 'All options have been processed. Thank you!',
+          content: nextQuestion,
           showOptions: false,
+          isQuestion: true,
         };
 
-        const updatedChatsWithFinalMessage = updatedChats.map(chat => {
+        const updatedChatsWithstartQuestions = updatedChats.map(chat => {
           if (chat.id === currentChatId) {
             return {
               ...chat,
-              messages: [...chat.messages, finalMessage],
+              messages: [...chat.messages, startQuestions],
             };
           }
           return chat;
         });
 
-        setChats(updatedChatsWithFinalMessage);
+        setChats(updatedChatsWithstartQuestions);
         setIsOptionsPending(false);
       }
     }, 50); // Add a 500ms delay before showing the next set of options
@@ -328,15 +330,16 @@ function App() {
           };
         } else {
           // If no more options, push a final message
-          const finalMessage: Message = {
+          const startQuestions: Message = {
             role: 'assistant',
-            content: 'All options have been processed. Thank you!',
+            content: 'All options have been processed',
             showOptions: false,
+            isQuestion: true,
           };
 
           return {
             ...chat,
-            messages: [...updatedMessages, finalMessage],
+            messages: [...updatedMessages, startQuestions],
           };
         }
       }
