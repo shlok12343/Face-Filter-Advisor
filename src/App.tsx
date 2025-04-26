@@ -123,21 +123,8 @@ function App() {
     const containsFinalKeyword = input.toLowerCase().includes('final');
     const containsQuestionKeyword = input.toLowerCase().includes('question');
 
-    //const optionsMatch = input.toLowerCase().match(/option\s+(\d+)/);
-    //const optionsCount = optionsMatch ? parseInt(optionsMatch[1], 10) : null;
     let item: string[] = [];
     let optionsCount = 0;
-    if (olist.current.length > 0) {
-      // Get the first item from the list
-      item = olist.current[0];
-      optionsCount = item.length;
-    
-      // Remove the item from the list
-      olist.current = olist.current.slice(1);
-    
-      console.log('Retrieved item:', item);
-      console.log('Updated olist:', olist.current);
-    }
     
 
     const newMessage: Message = { role: 'user', content: input };
@@ -229,17 +216,19 @@ function App() {
     });
     setChats(updatedChats);
   };
-  // where I can store the user results from
+
   const handleOptionSelect = (userChoice: string) => {
-    setIsOptionsPending(false);
+    if (!currentChatId) return;
+
+    // Step 1: Update the last message to show the selected option
     const updatedChats = chats.map(chat => {
       if (chat.id === currentChatId) {
         const updatedMessages = chat.messages.map((msg, index) => {
           if (index === chat.messages.length - 1) {
             return {
               ...msg,
-              showOptions: false,
-              content: `Selected Option: ${userChoice}`
+              showOptions: false, // Remove options UI
+              content: `Selected Option: ${userChoice}`, // Update content with selected option
             };
           }
           return msg;
@@ -248,7 +237,116 @@ function App() {
       }
       return chat;
     });
+
     setChats(updatedChats);
+
+    // Step 3: Add a delay before showing the next set of options
+    setTimeout(() => {
+      if (olist.current.length > 0) {
+        const nextOptions = olist.current[0];
+        const optionsCount = nextOptions.length;
+
+        // Remove the first set of options from olist
+        olist.current = olist.current.slice(1);
+
+        // Push the next options message
+        const nextOptionsMessage: Message = {
+          role: 'assistant',
+          content: '',
+          userOptions: nextOptions,
+          showOptions: true,
+          optionsCount,
+        };
+
+        const updatedChatsWithNextOptions = updatedChats.map(chat => {
+          if (chat.id === currentChatId) {
+            return {
+              ...chat,
+              messages: [...chat.messages, nextOptionsMessage],
+            };
+          }
+          return chat;
+        });
+
+        setChats(updatedChatsWithNextOptions);
+        setIsOptionsPending(true);
+      } else {
+        // Step 4: If no more options, push a final message
+        const finalMessage: Message = {
+          role: 'assistant',
+          content: 'All options have been processed. Thank you!',
+          showOptions: false,
+        };
+
+        const updatedChatsWithFinalMessage = updatedChats.map(chat => {
+          if (chat.id === currentChatId) {
+            return {
+              ...chat,
+              messages: [...chat.messages, finalMessage],
+            };
+          }
+          return chat;
+        });
+
+        setChats(updatedChatsWithFinalMessage);
+        setIsOptionsPending(false);
+      }
+    }, 50); // Add a 500ms delay before showing the next set of options
+  };
+
+  const handleNextOption = (userChoice?: string) => {
+    if (!currentChatId) return;
+
+    if (userChoice) {
+      console.log(`User selected: ${userChoice}`);
+    }
+
+    if (olist.current.length > 0) {
+      const nextOptions = olist.current[0];
+      const optionsCount = nextOptions.length;
+
+      olist.current = olist.current.slice(1);
+
+      const newMessage: Message = {
+        role: 'assistant',
+        content: '',
+        userOptions: nextOptions,
+        showOptions: true,
+        optionsCount,
+      };
+
+      const updatedChats = chats.map((chat) => {
+        if (chat.id === currentChatId) {
+          return {
+            ...chat,
+            messages: [...chat.messages, newMessage],
+          };
+        }
+        return chat;
+      });
+
+      setChats(updatedChats);
+      setIsOptionsPending(true);
+    } else {
+      const finalMessage: Message = {
+        role: 'assistant',
+        content: 'All options have been processed. Thank you!',
+        showOptions: false,
+      };
+
+      const updatedChats = chats.map((chat) => {
+        if (chat.id === currentChatId) {
+          return {
+            ...chat,
+            messages: [...chat.messages, finalMessage],
+          };
+        }
+        return chat;
+      });
+
+      setChats(updatedChats);
+      setIsOptionsPending(false);
+    }
   };
 
   return (
@@ -328,7 +426,10 @@ function App() {
                   key={index}
                   userOptions={message.userOptions}
                   optionsCount={message.optionsCount || 2}
-                  onSelectOption={handleOptionSelect}
+                  onSelectOption={(userChoice) => {
+                    handleOptionSelect(userChoice); // Handle the user's choice
+                    //handleNextOption(userChoice); // Call handleNextOption with the user's choice
+                  }}
                 />
               ) : (
                 <ChatMessage
@@ -344,6 +445,7 @@ function App() {
                   onShowDecision={message.showDecisionGraph ? () => setShowDecisionGraph(true) : undefined}
                   updateqLists={updateqLists}
                   updateopLists={updateopLists}
+                  handleNextOption={handleNextOption} // Pass handleNextOption
                 />
               )
             )

@@ -14,6 +14,7 @@ interface ChatMessageProps {
   onShowDecision?: () => void;
   updateqLists?: (result: string[]) => void; // Add this prop
   updateopLists?: (result: string[][]) => void;
+  handleNextOption?: () => void; // Add this prop
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ 
@@ -27,16 +28,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   onCancel,
   onShowDecision,
   updateqLists, 
-  updateopLists
+  updateopLists,
+  handleNextOption
 }) => {
   const handleContinue = async () => {
     if (onContinue) {
       await onContinue(); // Call the passed onContinue function
     }
+
     try {
       const result = await categorizeDecision(content); // Call categorizeDecision
       console.log('Categorize Decision Result:', result);
-      console.log('Categorize q:', result['questions']);
 
       if (updateqLists) {
         updateqLists(result['questions']);
@@ -45,6 +47,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         updateopLists(result['options']);
       }
 
+      // Call handleNextOption to push the next message
+      if (handleNextOption) {
+        handleNextOption();
+      }
     } catch (error) {
       console.error('Error categorizing decision:', error);
     }

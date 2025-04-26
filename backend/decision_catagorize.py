@@ -69,6 +69,7 @@ def question_and_options(user_input):
     8. Do not include any additional text or commentary.
     9. the more specific the question the better.
     10. the more considerations to think about when making the choice given as options or questions to the user the better.
+    11. give more options and less questions only use questions if you can not add the condiseration in multiple options the user can choose from.
     """
     return call_groq(user_input, system_prompt)
 
