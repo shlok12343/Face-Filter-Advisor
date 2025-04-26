@@ -301,52 +301,50 @@ function App() {
       console.log(`User selected: ${userChoice}`);
     }
 
-    if (olist.current.length > 0) {
-      const nextOptions = olist.current[0];
-      const optionsCount = nextOptions.length;
+    const updatedChats = chats.map((chat) => {
+      if (chat.id === currentChatId) {
+        // Remove the last message (options message) from the chat
+        const updatedMessages = chat.messages.slice(0, -1);
 
-      olist.current = olist.current.slice(1);
+        if (olist.current.length > 0) {
+          const nextOptions = olist.current[0];
+          const optionsCount = nextOptions.length;
 
-      const newMessage: Message = {
-        role: 'assistant',
-        content: '',
-        userOptions: nextOptions,
-        showOptions: true,
-        optionsCount,
-      };
+          // Remove the first set of options from olist
+          olist.current = olist.current.slice(1);
 
-      const updatedChats = chats.map((chat) => {
-        if (chat.id === currentChatId) {
+          // Push the next options message
+          const nextOptionsMessage: Message = {
+            role: 'assistant',
+            content: '',
+            userOptions: nextOptions,
+            showOptions: true,
+            optionsCount,
+          };
+
           return {
             ...chat,
-            messages: [...chat.messages, newMessage],
+            messages: [...updatedMessages, nextOptionsMessage],
           };
-        }
-        return chat;
-      });
+        } else {
+          // If no more options, push a final message
+          const finalMessage: Message = {
+            role: 'assistant',
+            content: 'All options have been processed. Thank you!',
+            showOptions: false,
+          };
 
-      setChats(updatedChats);
-      setIsOptionsPending(true);
-    } else {
-      const finalMessage: Message = {
-        role: 'assistant',
-        content: 'All options have been processed. Thank you!',
-        showOptions: false,
-      };
-
-      const updatedChats = chats.map((chat) => {
-        if (chat.id === currentChatId) {
           return {
             ...chat,
-            messages: [...chat.messages, finalMessage],
+            messages: [...updatedMessages, finalMessage],
           };
         }
-        return chat;
-      });
+      }
+      return chat;
+    });
 
-      setChats(updatedChats);
-      setIsOptionsPending(false);
-    }
+    setChats(updatedChats);
+    setIsOptionsPending(olist.current.length > 0);
   };
 
   return (
