@@ -3,7 +3,7 @@ import { Send, PenSquare, MessageSquare, Trash2 } from 'lucide-react';
 import ChatMessage from './components/ChatMessage';
 import DecisionGraph from './components/DecisionGraph';
 import Options from './components/Options';
-import { isDecision } from './res';
+import { isDecision,getAnswer } from './res';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -111,6 +111,9 @@ function App() {
         if (decision === "Only help with decisions") {
           containsDecisionKeywordRef.current = false;
         } else {
+          usersanswers.current.push("give me your decision from these options only");
+          usersanswers.current.push(decision);
+          
           containsDecisionKeywordRef.current = true;
           decisionList = decision.split(',').map(item => item.trim());
           console.log("Decision result as list:", decisionList);
@@ -159,11 +162,25 @@ function App() {
     } else if (containsFinalKeywordRef.current) {
       usersanswers.current.push(input);
       console.log("User's answers:", usersanswers.current);
+      let finalDecision = '';
+      try{
+        const combinedAnswers = usersanswers.current.join(' ');
+        finalDecision = await getAnswer(combinedAnswers);
+        console.log("Combined answers:", combinedAnswers);
+        console.log("Final decision result:", finalDecision);
+      }catch (error) {
+        console.error("Error getting final decision:", error);
+      }      
       messages.push({
         role: 'assistant',
-        content: 'Best choice is...',
+        content: finalDecision,
         showDecisionGraph: true,
       });
+      containsFinalKeywordRef.current = false;
+      containsDecisionKeywordRef.current = false;
+      qlist.current = [];
+      olist.current = [];
+      usersanswers.current = [];
     } else {
       messages.push({
         role: 'assistant',

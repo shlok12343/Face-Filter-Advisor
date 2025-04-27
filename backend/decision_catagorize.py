@@ -81,6 +81,13 @@ def get_answer(user_input):
     4. the context will include a list of questions and thier answers to help you decided.
     5. you will decide and give a final answer to the user based on the context.
     """
+    result = call_groq(user_input, system_prompt)
+    try:
+        return json.dumps({"result": result})
+    except json.JSONDecodeError:
+        print("Response is not valid JSON:")
+        print(result)
+        return json.dumps({"result": "Invalid JSON response"})
 
 
 if __name__ == "__main__":
