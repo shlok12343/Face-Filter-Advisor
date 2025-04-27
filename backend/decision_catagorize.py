@@ -80,10 +80,19 @@ def get_answer(user_input):
     3. The context will include a list of things to consider when making this choice.
     4. the context will include a list of questions and thier answers to help you decided.
     5. you will decide and give a final answer to the user based on the context.
+    6. you will only give the a choice from the users choices.
+    Please respond only with a JSON with {}
+    respondse json example:
+    {
+        "answer": "the choice you made",
+        "reasoning": "the reasoning behind the choice you made",
+    }
     """
     result = call_groq(user_input, system_prompt)
+
     try:
-        return json.dumps({"result": result})
+        json_res = json.loads(result)
+        return json.dumps({"result": json_res})
     except json.JSONDecodeError:
         print("Response is not valid JSON:")
         print(result)

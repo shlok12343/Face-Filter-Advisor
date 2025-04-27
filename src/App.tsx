@@ -3,7 +3,7 @@ import { Send, PenSquare, MessageSquare, Trash2 } from 'lucide-react';
 import ChatMessage from './components/ChatMessage';
 import DecisionGraph from './components/DecisionGraph';
 import Options from './components/Options';
-import { isDecision,getAnswer } from './res';
+import { isDecision, getAnswer } from './res';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -36,16 +36,17 @@ function App() {
   const qlist = useRef<string[]>([]);
   const olist = useRef<string[][]>([]);
   let usersanswers = useRef<string[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null); // Ref for the messages container
 
   const updateqLists = (result: string[]) => {
     console.log("Update lists called with result:", result);
-    qlist.current = result
+    qlist.current = result;
     console.log("Updated qlist:", qlist.current);
   };
 
   const updateopLists = (result: string[][]) => {
     console.log("Update lists called with result:", result);
-    olist.current = result
+    olist.current = result;
     console.log("Updated olist:", olist.current);
   };
 
@@ -60,6 +61,12 @@ function App() {
       setCurrentChatId(initialChat.id);
     }
   }, []);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chats]); // Trigger when chats update
 
   const currentChat = chats.find(chat => chat.id === currentChatId);
   const messages = currentChat?.messages || [];
@@ -107,13 +114,12 @@ function App() {
         decision = await isDecision(input);
         console.log("Input:", input);
         console.log("Decision result:", decision);
-  
+
         if (decision === "Only help with decisions") {
           containsDecisionKeywordRef.current = false;
         } else {
           usersanswers.current.push("give me your decision from these options only");
           usersanswers.current.push(decision);
-          
           containsDecisionKeywordRef.current = true;
           decisionList = decision.split(',').map(item => item.trim());
           console.log("Decision result as list:", decisionList);
@@ -125,7 +131,6 @@ function App() {
       }
     }
 
-    
     const containsQuestionKeyword = input.toLowerCase().includes('question');
 
     const newMessage: Message = { role: 'user', content: input };
@@ -134,6 +139,8 @@ function App() {
     console.log('containsDecisionKeywordRef', containsDecisionKeywordRef.current);
     console.log('olist', olist.current);
     console.log('qlist', qlist.current);
+    console.log('decisionList', decisionList);
+
 
     if (containsDecisionKeywordRef.current && qlist.current.length == 0 && olist.current.length == 0 && !containsFinalKeywordRef.current) {
       messages.push({
@@ -162,18 +169,23 @@ function App() {
     } else if (containsFinalKeywordRef.current) {
       usersanswers.current.push(input);
       console.log("User's answers:", usersanswers.current);
-      let finalDecision = '';
-      try{
+      let finalDecision = {
+        answer: '',
+        reasoning : '',
+      };
+      let answer = '';
+      try {
         const combinedAnswers = usersanswers.current.join(' ');
         finalDecision = await getAnswer(combinedAnswers);
+        answer = finalDecision['answer'];
         console.log("Combined answers:", combinedAnswers);
         console.log("Final decision result:", finalDecision);
-      }catch (error) {
+      } catch (error) {
         console.error("Error getting final decision:", error);
-      }      
+      }
       messages.push({
         role: 'assistant',
-        content: finalDecision,
+        content: answer,
         showDecisionGraph: true,
       });
       containsFinalKeywordRef.current = false;
@@ -184,7 +196,7 @@ function App() {
     } else {
       messages.push({
         role: 'assistant',
-        content: decision,
+        content: "We’re here ONLY to help with decisions and choices. Is there a decision or choice you’re currently facing that you’d like to ask us about? Thanks!",
         showDecisionOptions: false,
         isQuestion: containsQuestionKeyword,
       });
@@ -238,6 +250,9 @@ function App() {
       return chat;
     });
     setChats(updatedChats);
+
+    containsDecisionKeywordRef.current = false;
+
   };
 
   const handleOptionSelect = (userChoice: string) => {
@@ -298,7 +313,7 @@ function App() {
         setIsOptionsPending(true);
       } else {
         let nextQuestion = qlist.current.length > 0 ? qlist.current.shift()!
-        : 'All options have been processed.';
+          : 'All options have been processed.';
 
         usersanswers.current.push("these are question the users answered");
         usersanswers.current.push(nextQuestion);
@@ -447,7 +462,7 @@ function App() {
             <div className="flex flex-col items-center justify-center h-full text-[#a48363]">
               <MessageSquare className="w-16 h-16 mb-4" />
               <h2 className="text-2xl font-bold mb-2">Start the Conversation</h2>
-              <p>Ask your first question below</p>
+              <p>Ask us about a decision or choice you want help making</p>
             </div>
           ) : (
             messages.map((message, index) =>
@@ -457,8 +472,7 @@ function App() {
                   userOptions={message.userOptions}
                   optionsCount={message.optionsCount || 2}
                   onSelectOption={(userChoice) => {
-                    handleOptionSelect(userChoice); // Handle the user's choice
-                    //handleNextOption(userChoice); // Call handleNextOption with the user's choice
+                    handleOptionSelect(userChoice);
                   }}
                 />
               ) : (
@@ -475,11 +489,13 @@ function App() {
                   onShowDecision={message.showDecisionGraph ? () => setShowDecisionGraph(true) : undefined}
                   updateqLists={updateqLists}
                   updateopLists={updateopLists}
-                  handleNextOption={handleNextOption} // Pass handleNextOption
+                  handleNextOption={handleNextOption}
                 />
               )
             )
           )}
+          {/* Add a div to act as the scroll target */}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="border-t border-[#e3a66a] bg-white p-4">
