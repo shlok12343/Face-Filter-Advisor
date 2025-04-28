@@ -31,6 +31,7 @@ function App() {
   const [showDecisionGraph, setShowDecisionGraph] = useState(false);
   const [isDecisionPending, setIsDecisionPending] = useState(false);
   const [isOptionsPending, setIsOptionsPending] = useState(false);
+  const [decisionReason, setDecisionReason] = useState<string | null>(null); // Add state to store the reason
   const containsDecisionKeywordRef = useRef(false);
   const containsFinalKeywordRef = useRef(false);
   const qlist = useRef<string[]>([]);
@@ -118,7 +119,6 @@ function App() {
         if (decision === "Only help with decisions") {
           containsDecisionKeywordRef.current = false;
         } else {
-          usersanswers.current.push("give me your decision from these options only");
           usersanswers.current.push(decision);
           containsDecisionKeywordRef.current = true;
           decisionList = decision.split(',').map(item => item.trim());
@@ -171,13 +171,16 @@ function App() {
       console.log("User's answers:", usersanswers.current);
       let finalDecision = {
         answer: '',
-        reasoning : '',
+        reasoning: '',
       };
       let answer = '';
+      let reason = '';
       try {
         const combinedAnswers = usersanswers.current.join(' ');
         finalDecision = await getAnswer(combinedAnswers);
         answer = finalDecision['answer'];
+        reason = finalDecision['reasoning'];
+        setDecisionReason(reason); // Store the reason in state
         console.log("Combined answers:", combinedAnswers);
         console.log("Final decision result:", finalDecision);
       } catch (error) {
@@ -524,7 +527,12 @@ function App() {
         </div>
       </div>
 
-      {showDecisionGraph && <DecisionGraph onClose={() => setShowDecisionGraph(false)} />}
+      {showDecisionGraph && (
+        <DecisionGraph
+          onClose={() => setShowDecisionGraph(false)}
+          reason={decisionReason} // Pass the reason as a prop
+        />
+      )}
     </div>
   );
 }

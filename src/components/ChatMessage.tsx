@@ -129,7 +129,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               className="mt-2 flex items-center gap-2 text-[#e3a66a] hover:text-[#a48363] transition-colors duration-200"
             >
               <LineChart className="w-4 h-4" />
-              View Decision Graph
+              View Decision Reason
             </button>
           )}
         </div>

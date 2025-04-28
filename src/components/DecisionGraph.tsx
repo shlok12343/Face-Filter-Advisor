@@ -3,9 +3,10 @@ import { X } from 'lucide-react';
 
 interface DecisionGraphProps {
   onClose: () => void;
+  reason: string | null; // Add a prop for the reason
 }
 
-const DecisionGraph: React.FC<DecisionGraphProps> = ({ onClose }) => {
+const DecisionGraph: React.FC<DecisionGraphProps> = ({ onClose, reason }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-3/4 h-3/4 p-6">
@@ -21,9 +22,11 @@ const DecisionGraph: React.FC<DecisionGraphProps> = ({ onClose }) => {
         
         <div className="h-full overflow-y-auto">
           <div className="bg-[#eed8a4] bg-opacity-10 rounded-lg p-4 h-full flex items-center justify-center">
-            <p className="text-[#a48363]">
-              Decision visualization will be implemented here
-            </p>
+            {reason ? (
+              <p className="text-[#a48363] text-lg">{reason}</p> // Display the reason
+            ) : (
+              <p className="text-[#a48363]">Loading decision visualization...</p> // Fallback text
+            )}
           </div>
         </div>
       </div>
