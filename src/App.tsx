@@ -78,6 +78,15 @@ function App() {
       title: 'New Chat',
       messages: []
     };
+
+    // reset all useref variables
+    containsDecisionKeywordRef.current = false;
+    containsFinalKeywordRef.current = false;
+    qlist.current = [];
+    olist.current = [];
+    usersanswers.current = [];
+    
+    
     setChats([newChat, ...chats]);
     setCurrentChatId(newChat.id);
     setInput('');
@@ -426,12 +435,17 @@ function App() {
         <div className="group relative w-10 mt-1 mb-2">
           <button
             onClick={createNewChat}
-            className="flex items-center justify-center w-10 h-10 bg-[#e3a66a] hover:bg-[#eed8a4] hover:text-[#a48363] transition-colors duration-200 rounded-lg"
+            disabled={containsDecisionKeywordRef.current} // Disable button if containsDecisionKeywordRef is true
+            className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors duration-200 ${
+              containsDecisionKeywordRef.current
+                ? 'bg-gray-400 cursor-not-allowed' // Disabled state styling
+                : 'bg-[#e3a66a] hover:bg-[#eed8a4] hover:text-[#a48363]' // Enabled state styling
+            }`}
           >
             <PenSquare className="w-5 h-5" />
           </button>
           <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-[#eed8a4] text-[#a48363] rounded text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-            New Chat
+            {containsDecisionKeywordRef.current ? 'Complete current decision first' : 'New Chat'}
           </div>
         </div>
 

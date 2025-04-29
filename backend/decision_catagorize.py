@@ -75,7 +75,7 @@ def question_and_options(user_input):
     10. the more considerations to think about when making the choice given as options or questions to the user the better.
     11. give more options and less questions only use questions if you can not add the condiseration in multiple options the user can choose from.
     12. the things to consider should not be questions if they could have been options.
-    13. have lesser than 6 questions and more than 5 options.
+    13. have lesser than 5 questions and more than 5 options.
 
     Example:
     prompt: what should I have for dinner tonight 
